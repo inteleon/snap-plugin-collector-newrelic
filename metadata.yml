@@ -1,0 +1,6 @@
+name: NewRelic
+type: collector
+maintainer: Inteleon
+license: Apache-2.0
+description: "Collect metrics from New Relic."
+status: Experimental
