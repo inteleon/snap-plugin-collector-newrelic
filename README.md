@@ -73,6 +73,10 @@ See [newrelic.example.yml](newrelic.example.yml) for a configuration example wit
 
 **NOTE:** Not all additional application metrics are included in the example configuration file, because those can be generated dynamically depending on the available metric values.
 
+### Good to know
+
+The plugin always fetches the default time frame, which is the last 30 minutes. I plan on supporting relative timeframes.
+
 ## Contributors
 
 Coming soon.

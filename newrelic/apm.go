@@ -103,6 +103,7 @@ var APMMetrics = []Metric{
 				Description: "Value name",
 				Value:       "*",
 			},
+			plugin.NewNamespaceElement("value"),
 		},
 		Type: "metric",
 		Unit: "float",
@@ -235,7 +236,7 @@ func (a *APM) populateMetric(metric plugin.Metric, mapData map[string]interface{
 
 	mPath := []string{}
 	if metric.Tags["Path"] == "" {
-		mPath = []string{metric.Namespace.Element(len(metric.Namespace) - 1).Value}
+		mPath = []string{metric.Namespace.Element(len(metric.Namespace) - 2).Value}
 	} else {
 		mPath = strings.Split(metric.Tags["Path"], "/")
 	}
@@ -290,6 +291,7 @@ func (a *APM) collectApplications(metrics []plugin.Metric) ([]plugin.Metric, err
 func (a *APM) collectApplicationAdditionalMetrics(metrics []plugin.Metric) ([]plugin.Metric, error) {
 	appAdditionalMetrics := []plugin.Metric{}
 
+	addMetrics := map[int]map[string]*nr.MetricDataResponse{}
 	for i, m := range metrics {
 		appID := m.Namespace.Element(3)
 
@@ -298,11 +300,22 @@ func (a *APM) collectApplicationAdditionalMetrics(metrics []plugin.Metric) ([]pl
 			return appAdditionalMetrics, err
 		}
 
-		metricStringID := m.Namespace.Element(5)
-		appAdditionalMetricData, err := a.APMClient.GetApplicationMetricData(appIDInt, []string{metricStringID.Value}, nil)
-		if err != nil {
-			return appAdditionalMetrics, err
+		metricStringID := m.Namespace.Element(5).Value
+		if _, ok := addMetrics[appIDInt][metricStringID]; !ok {
+			// Additional application metric missing, fetching...
+			fetchAppAdditionalMetricData, err := a.APMClient.GetApplicationMetricData(appIDInt, []string{metricStringID}, nil)
+			if err != nil {
+				return appAdditionalMetrics, err
+			}
+
+			if _, ok := addMetrics[appIDInt]; !ok {
+				addMetrics[appIDInt] = map[string]*nr.MetricDataResponse{}
+			}
+
+			addMetrics[appIDInt][metricStringID] = fetchAppAdditionalMetricData
 		}
+
+		appAdditionalMetricData := addMetrics[appIDInt][metricStringID]
 
 		numberOfMetricsFound := len(appAdditionalMetricData.Metrics)
 		if numberOfMetricsFound != 1 {
@@ -314,10 +327,10 @@ func (a *APM) collectApplicationAdditionalMetrics(metrics []plugin.Metric) ([]pl
 		}
 
 		firstMetric := appAdditionalMetricData.Metrics[0]
-		if firstMetric.Name != metricStringID.Value {
+		if firstMetric.Name != metricStringID {
 			return appAdditionalMetrics, fmt.Errorf(
 				"Metric name mismatch! Requested metric name: %s. Metric name in the received payload: %s.",
-				metricStringID.Value,
+				metricStringID,
 				firstMetric.Name,
 			)
 		}
