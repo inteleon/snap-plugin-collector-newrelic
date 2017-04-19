@@ -10,91 +10,106 @@ import (
 	"time"
 )
 
-// APMMetrics is a map containing the available APM metrics and their properties (only used in this collector).
-var APMMetrics = []map[string]string{
+// APMMetrics is a list containing the available APM metrics and their properties.
+var APMMetrics = []Metric{
 	{
-		"namespace": "show/health/status",
-		"type":      "application",
-		"path":      "HealthStatus",
-		"unit":      "string",
+		Namespace: plugin.NewNamespace("show", "health", "status"),
+		Type:      "application",
+		Path:      "HealthStatus",
+		Unit:      "string",
 	},
 	{
-		"namespace": "show/reporting",
-		"type":      "application",
-		"path":      "Reporting",
-		"unit":      "bool",
+		Namespace: plugin.NewNamespace("show", "reporting"),
+		Type:      "application",
+		Path:      "Reporting",
+		Unit:      "bool",
 	},
 	{
-		"namespace": "show/summary/application/response_time",
-		"type":      "application",
-		"path":      "ApplicationSummary/ResponseTime",
-		"unit":      "float",
+		Namespace: plugin.NewNamespace("show", "summary", "application", "response_time"),
+		Type:      "application",
+		Path:      "ApplicationSummary/ResponseTime",
+		Unit:      "float",
 	},
 	{
-		"namespace": "show/summary/application/throughput",
-		"type":      "application",
-		"path":      "ApplicationSummary/Throughput",
-		"unit":      "float",
+		Namespace: plugin.NewNamespace("show", "summary", "application", "throughput"),
+		Type:      "application",
+		Path:      "ApplicationSummary/Throughput",
+		Unit:      "float",
 	},
 	{
-		"namespace": "show/summary/application/error_rate",
-		"type":      "application",
-		"path":      "ApplicationSummary/ErrorRate",
-		"unit":      "float",
+		Namespace: plugin.NewNamespace("show", "summary", "application", "error_rate"),
+		Type:      "application",
+		Path:      "ApplicationSummary/ErrorRate",
+		Unit:      "float",
 	},
 	{
-		"namespace": "show/summary/application/apdex_target",
-		"type":      "application",
-		"path":      "ApplicationSummary/ApdexTarget",
-		"unit":      "float",
+		Namespace: plugin.NewNamespace("show", "summary", "application", "apdex_target"),
+		Type:      "application",
+		Path:      "ApplicationSummary/ApdexTarget",
+		Unit:      "float",
 	},
 	{
-		"namespace": "show/summary/application/apdex_score",
-		"type":      "application",
-		"path":      "ApplicationSummary/ApdexScore",
-		"unit":      "float",
+		Namespace: plugin.NewNamespace("show", "summary", "application", "apdex_score"),
+		Type:      "application",
+		Path:      "ApplicationSummary/ApdexScore",
+		Unit:      "float",
 	},
 	{
-		"namespace": "show/summary/application/host_count",
-		"type":      "application",
-		"path":      "ApplicationSummary/HostCount",
-		"unit":      "int",
+		Namespace: plugin.NewNamespace("show", "summary", "application", "host_count"),
+		Type:      "application",
+		Path:      "ApplicationSummary/HostCount",
+		Unit:      "int",
 	},
 	{
-		"namespace": "show/summary/application/instance_count",
-		"type":      "application",
-		"path":      "ApplicationSummary/InstanceCount",
-		"unit":      "int",
+		Namespace: plugin.NewNamespace("show", "summary", "application", "instance_count"),
+		Type:      "application",
+		Path:      "ApplicationSummary/InstanceCount",
+		Unit:      "int",
 	},
 	{
-		"namespace": "show/summary/user/response_time",
-		"type":      "application",
-		"path":      "EndUserSummary/ResponseTime",
-		"unit":      "float",
+		Namespace: plugin.NewNamespace("show", "summary", "user", "response_time"),
+		Type:      "application",
+		Path:      "EndUserSummary/ResponseTime",
+		Unit:      "float",
 	},
 	{
-		"namespace": "show/summary/user/throughput",
-		"type":      "application",
-		"path":      "EndUserSummary/Throughput",
-		"unit":      "float",
+		Namespace: plugin.NewNamespace("show", "summary", "user", "throughput"),
+		Type:      "application",
+		Path:      "EndUserSummary/Throughput",
+		Unit:      "float",
 	},
 	{
-		"namespace": "show/summary/user/apdex_target",
-		"type":      "application",
-		"path":      "EndUserSummary/ApdexTarget",
-		"unit":      "float",
+		Namespace: plugin.NewNamespace("show", "summary", "user", "apdex_target"),
+		Type:      "application",
+		Path:      "EndUserSummary/ApdexTarget",
+		Unit:      "float",
 	},
 	{
-		"namespace": "show/summary/user/apdex_score",
-		"type":      "application",
-		"path":      "EndUserSummary/ApdexScore",
-		"unit":      "float",
+		Namespace: plugin.NewNamespace("show", "summary", "user", "apdex_score"),
+		Type:      "application",
+		Path:      "EndUserSummary/ApdexScore",
+		Unit:      "float",
+	},
+	{
+		Namespace: plugin.Namespace{
+			plugin.NewNamespaceElement("metric"),
+			plugin.NamespaceElement{
+				Name:        "metric_name",
+				Description: "Metric name",
+				Value:       "*",
+			},
+			plugin.NewNamespaceElement("average_response_time"),
+		},
+		Type: "metric",
+		Path: "average_response_time",
+		Unit: "float",
 	},
 }
 
 // APMClient is the interface every AMP client needs to implement.
 type APMClient interface {
 	GetApplication(int) (*nr.Application, error)
+	GetApplicationMetricData(int, []string, *nr.MetricDataOptions) (*nr.MetricDataResponse, error)
 }
 
 // APMClientImpl is a real implementation of an APMClient.
@@ -107,6 +122,13 @@ func (a *APMClientImpl) GetApplication(appID int) (*nr.Application, error) {
 	c := nr.NewClient(a.APIKey)
 
 	return c.GetApplication(appID)
+}
+
+// GetApplicationMetricData fetches application specific metric data (custom or not).
+func (a *APMClientImpl) GetApplicationMetricData(appID int, names []string, options *nr.MetricDataOptions) (*nr.MetricDataResponse, error) {
+	c := nr.NewClient(a.APIKey)
+
+	return c.GetApplicationMetricData(appID, names, options)
 }
 
 // APM represents the APM service part of New Relic.
@@ -130,14 +152,21 @@ func (a *APM) GetMetricTypes(_ plugin.Config) ([]plugin.Metric, error) {
 	for _, m := range APMMetrics {
 		ns := plugin.NewNamespace("inteleon", "newrelic", "apm")
 		ns = ns.AddDynamicElement("app_id", "Application id")
-		ns = ns.AddStaticElements(strings.Split(m["namespace"], "/")...)
+
+		for i := range m.Namespace {
+			ns = append(ns, m.Namespace[i])
+		}
 
 		metrics = append(
 			metrics,
 			plugin.Metric{
 				Namespace: ns,
 				Version:   1,
-				Tags:      m,
+				Tags: map[string]string{
+					"Type": m.Type,
+					"Path": m.Path,
+					"Unit": m.Unit,
+				},
 			},
 		)
 	}
@@ -153,60 +182,142 @@ func (a *APM) CollectMetrics(metrics []plugin.Metric) ([]plugin.Metric, error) {
 		return collectedMetrics, fmt.Errorf("List of metrics is empty")
 	}
 
-	apps := map[int]*nr.Application{}
+	apps := []plugin.Metric{}
+	appAdditionalMetrics := []plugin.Metric{}
 	for i, m := range metrics {
 		if m.Namespace.Element(2).Value != "apm" {
 			continue
 		}
 
+		switch m.Tags["Type"] {
+		case "application":
+			apps = append(apps, metrics[i])
+
+			break
+		case "metric":
+			appAdditionalMetrics = append(appAdditionalMetrics, metrics[i])
+
+			break
+		}
+	}
+
+	if len(apps) > 0 {
+		appsMetrics, err := a.collectApplications(apps)
+		if err != nil {
+			return collectedMetrics, err
+		}
+
+		for i := range appsMetrics {
+			collectedMetrics = append(collectedMetrics, appsMetrics[i])
+		}
+	}
+
+	if len(appAdditionalMetrics) > 0 {
+		appAdditionalMetricsData, err := a.collectApplicationAdditionalMetrics(appAdditionalMetrics)
+		if err != nil {
+			return collectedMetrics, err
+		}
+
+		for i := range appAdditionalMetricsData {
+			collectedMetrics = append(collectedMetrics, appAdditionalMetricsData[i])
+		}
+	}
+
+	return collectedMetrics, nil
+}
+
+func (a *APM) populateMetric(metric plugin.Metric, mapData map[string]interface{}) (plugin.Metric, error) {
+	// Create a new metric based on the "old" one.
+	newMetric := metric
+
+	metricData, err := mapTraverse(mapData, strings.Split(metric.Tags["Path"], "/"))
+	if err != nil {
+		return newMetric, err
+	}
+
+	newMetric.Data = metricData
+	newMetric.Unit = metric.Tags["Unit"]
+	newMetric.Tags = map[string]string{}
+	newMetric.Timestamp = time.Now().UTC()
+
+	return newMetric, nil
+}
+
+func (a *APM) collectApplications(metrics []plugin.Metric) ([]plugin.Metric, error) {
+	appsMetrics := []plugin.Metric{}
+
+	apps := map[int]*nr.Application{}
+	for i, m := range metrics {
 		appID := m.Namespace.Element(3)
 
 		appIDInt, err := strconv.Atoi(appID.Value)
 		if err != nil {
-			return collectedMetrics, err
+			return appsMetrics, err
 		}
 
 		if _, ok := apps[appIDInt]; !ok {
 			// Application info missing, fetching...
 			app, err := a.APMClient.GetApplication(appIDInt)
 			if err != nil {
-				return collectedMetrics, err
+				return appsMetrics, err
 			}
 
 			apps[appIDInt] = app
 		}
 
-		mapData := map[string]interface{}{}
-		switch m.Tags["type"] {
-		case "application":
-			appInfo := apps[appIDInt]
-			mapData = structs.Map(appInfo)
-
-			break
-		default:
-			return collectedMetrics, fmt.Errorf("Unsupported New Relic data type")
-		}
-
-		// Create a new metric based on the "old" one.
-		newMetric := metrics[i]
-
-		metricData, err := mapTraverse(mapData, strings.Split(m.Tags["path"], "/"))
+		// Convert the app data to a struct so it's more easily traversable and more universal before passing it to the populateMetric function.
+		appMetric, err := a.populateMetric(metrics[i], structs.Map(apps[appIDInt]))
 		if err != nil {
-			return collectedMetrics, err
+			return appsMetrics, err
 		}
 
-		newMetric.Data = metricData
-		newMetric.Unit = m.Tags["unit"]
-		newMetric.Tags = map[string]string{}
-		newMetric.Timestamp = time.Now().UTC()
-
-		collectedMetrics = append(
-			collectedMetrics,
-			newMetric,
-		)
+		appsMetrics = append(appsMetrics, appMetric)
 	}
 
-	return collectedMetrics, nil
+	return appsMetrics, nil
+}
+
+func (a *APM) collectApplicationAdditionalMetrics(metrics []plugin.Metric) ([]plugin.Metric, error) {
+	appAdditionalMetrics := []plugin.Metric{}
+
+	for i, m := range metrics {
+		appID := m.Namespace.Element(3)
+
+		appIDInt, err := strconv.Atoi(appID.Value)
+		if err != nil {
+			return appAdditionalMetrics, err
+		}
+
+		metricStringID := m.Namespace.Element(5)
+		appAdditionalMetricData, err := a.APMClient.GetApplicationMetricData(appIDInt, []string{metricStringID.Value}, nil)
+		if err != nil {
+			return appAdditionalMetrics, err
+		}
+
+		numberOfMetricsFound := len(appAdditionalMetricData.Metrics)
+		if numberOfMetricsFound != 1 {
+			return appAdditionalMetrics, fmt.Errorf(
+				"Wrong number of returned metrics when fetching data for %s. Exepected number is 1, got %d.",
+				metricStringID,
+				numberOfMetricsFound,
+			)
+		}
+
+		metricValues := appAdditionalMetricData.Metrics[0].Timeslices[0].Values
+		castValues := map[string]interface{}{}
+		for ci, _ := range metricValues {
+			castValues[ci] = metricValues[ci]
+		}
+
+		appMetric, err := a.populateMetric(metrics[i], castValues)
+		if err != nil {
+			return appAdditionalMetrics, err
+		}
+
+		appAdditionalMetrics = append(appAdditionalMetrics, appMetric)
+	}
+
+	return appAdditionalMetrics, nil
 }
 
 func mapTraverse(mapData map[string]interface{}, path []string) (interface{}, error) {

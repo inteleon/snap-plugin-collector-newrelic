@@ -4,6 +4,14 @@ import (
 	"github.com/intelsdi-x/snap-plugin-lib-go/v1/plugin"
 )
 
+// Metric describes a single fetchable metric.
+type Metric struct {
+	Namespace plugin.Namespace
+	Type      string
+	Path      string
+	Unit      string
+}
+
 // Service is the interface every New Relic service component must implement.
 type Service interface {
 	GetMetricTypes(plugin.Config) ([]plugin.Metric, error)

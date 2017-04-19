@@ -10,7 +10,9 @@ import (
 )
 
 type apmClientTestImpl struct {
-	appIDs []int
+	appIDs           []int
+	metricDataAppIDs []int
+	metricDataNames  map[int][]string
 }
 
 func (a *apmClientTestImpl) GetApplication(appID int) (*nr.Application, error) {
@@ -19,6 +21,34 @@ func (a *apmClientTestImpl) GetApplication(appID int) (*nr.Application, error) {
 	return &nr.Application{
 		HealthStatus: "awesome",
 		Reporting:    true,
+	}, nil
+}
+
+func (a *apmClientTestImpl) GetApplicationMetricData(appID int, names []string, options *nr.MetricDataOptions) (*nr.MetricDataResponse, error) {
+	a.metricDataAppIDs = append(a.metricDataAppIDs, appID)
+
+	if len(a.metricDataNames) == 0 {
+		a.metricDataNames = map[int][]string{}
+	}
+
+	a.metricDataNames[appID] = []string{}
+	for i := range names {
+		a.metricDataNames[appID] = append(a.metricDataNames[appID], names[i])
+	}
+
+	return &nr.MetricDataResponse{
+		Metrics: []nr.MetricData{
+			{
+				Name: "hax",
+				Timeslices: []nr.MetricTimeslice{
+					{
+						Values: map[string]float64{
+							"average_response_time": 100.34,
+						},
+					},
+				},
+			},
+		},
 	}, nil
 }
 
@@ -37,7 +67,7 @@ func TestGetMetricTypesSuccess(t *testing.T) {
 	}
 
 	for i, m := range metrics {
-		expectedNS := fmt.Sprintf("inteleon/newrelic/apm/*/%s", newrelic.APMMetrics[i]["namespace"])
+		expectedNS := fmt.Sprintf("inteleon/newrelic/apm/*/%s", strings.Join(newrelic.APMMetrics[i].Namespace.Strings(), "/"))
 		ns := strings.Join(m.Namespace.Strings(), "/")
 
 		if ns != expectedNS {
@@ -57,37 +87,41 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 		{
 			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "show", "health", "status"),
 			Tags: map[string]string{
-				"namespace": "show/health/status",
-				"type":      "application",
-				"path":      "HealthStatus",
-				"unit":      "string",
+				"Type": "application",
+				"Path": "HealthStatus",
+				"Unit": "string",
 			},
 		},
 		{
 			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1234", "show", "health", "status"),
 			Tags: map[string]string{
-				"namespace": "show/health/status",
-				"type":      "application",
-				"path":      "HealthStatus",
-				"unit":      "string",
+				"Type": "application",
+				"Path": "HealthStatus",
+				"Unit": "string",
 			},
 		},
 		{
 			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "show", "reporting"),
 			Tags: map[string]string{
-				"namespace": "show/reporting",
-				"type":      "application",
-				"path":      "Reporting",
-				"unit":      "bool",
+				"Type": "application",
+				"Path": "Reporting",
+				"Unit": "bool",
+			},
+		},
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "metric", "hax", "average_response_time"),
+			Tags: map[string]string{
+				"Type": "metric",
+				"Path": "average_response_time",
+				"Unit": "float",
 			},
 		},
 		{
 			Namespace: plugin.NewNamespace("inteleon", "newrelic", "browser", "314", "show", "health", "status"),
 			Tags: map[string]string{
-				"namespace": "show/health/status",
-				"type":      "application",
-				"path":      "HealthStatus",
-				"unit":      "string",
+				"Type": "application",
+				"Path": "HealthStatus",
+				"Unit": "string",
 			},
 		},
 	}
@@ -97,8 +131,8 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(ret) != 3 {
-		t.Fatal("expected", 3, "got", len(ret))
+	if len(ret) != 4 {
+		t.Fatal("expected", 4, "got", len(ret))
 	}
 
 	for _, m := range ret[:2] {
@@ -111,6 +145,10 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 		t.Fatal("expected", true, "got", false)
 	}
 
+	if ret[3].Data.(float64) != 100.34 {
+		t.Fatal("expected", 100.34, "got", ret[3].Data.(float64))
+	}
+
 	if len(apmClient.appIDs) != 2 {
 		t.Fatal("expected", 2, "got", len(apmClient.appIDs))
 	}
@@ -120,5 +158,25 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 		if id != expectedIDs[i] {
 			t.Fatal("expected", expectedIDs[i], "got", id)
 		}
+	}
+
+	if len(apmClient.metricDataAppIDs) != 1 {
+		t.Fatal("expected", 1, "got", len(apmClient.metricDataAppIDs))
+	}
+
+	if apmClient.metricDataAppIDs[0] != 1337 {
+		t.Fatal("expected", 1337, "got", apmClient.metricDataAppIDs[0])
+	}
+
+	if len(apmClient.metricDataNames) != 1 {
+		t.Fatal("expected", 1, "got", len(apmClient.metricDataNames))
+	}
+
+	if len(apmClient.metricDataNames[1337]) != 1 {
+		t.Fatal("expected", 1, "got", len(apmClient.metricDataNames[1337]))
+	}
+
+	if apmClient.metricDataNames[1337][0] != "hax" {
+		t.Fatal("expected", "hax", "got", apmClient.metricDataNames[1337][0])
 	}
 }
