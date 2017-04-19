@@ -98,10 +98,13 @@ var APMMetrics = []Metric{
 				Description: "Metric name",
 				Value:       "*",
 			},
-			plugin.NewNamespaceElement("average_response_time"),
+			plugin.NamespaceElement{
+				Name:        "value_name",
+				Description: "Value name",
+				Value:       "*",
+			},
 		},
 		Type: "metric",
-		Path: "average_response_time",
 		Unit: "float",
 	},
 }
@@ -230,7 +233,14 @@ func (a *APM) populateMetric(metric plugin.Metric, mapData map[string]interface{
 	// Create a new metric based on the "old" one.
 	newMetric := metric
 
-	metricData, err := mapTraverse(mapData, strings.Split(metric.Tags["Path"], "/"))
+	mPath := []string{}
+	if metric.Tags["Path"] == "" {
+		mPath = []string{metric.Namespace.Element(len(metric.Namespace) - 1).Value}
+	} else {
+		mPath = strings.Split(metric.Tags["Path"], "/")
+	}
+
+	metricData, err := mapTraverse(mapData, mPath)
 	if err != nil {
 		return newMetric, err
 	}
@@ -303,9 +313,18 @@ func (a *APM) collectApplicationAdditionalMetrics(metrics []plugin.Metric) ([]pl
 			)
 		}
 
-		metricValues := appAdditionalMetricData.Metrics[0].Timeslices[0].Values
+		firstMetric := appAdditionalMetricData.Metrics[0]
+		if firstMetric.Name != metricStringID.Value {
+			return appAdditionalMetrics, fmt.Errorf(
+				"Metric name mismatch! Requested metric name: %s. Metric name in the received payload: %s.",
+				metricStringID.Value,
+				firstMetric.Name,
+			)
+		}
+
+		metricValues := firstMetric.Timeslices[0].Values
 		castValues := map[string]interface{}{}
-		for ci, _ := range metricValues {
+		for ci := range metricValues {
 			castValues[ci] = metricValues[ci]
 		}
 

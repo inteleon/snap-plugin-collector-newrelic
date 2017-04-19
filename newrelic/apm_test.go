@@ -112,7 +112,6 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "metric", "hax", "average_response_time"),
 			Tags: map[string]string{
 				"Type": "metric",
-				"Path": "average_response_time",
 				"Unit": "float",
 			},
 		},
@@ -178,5 +177,139 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 
 	if apmClient.metricDataNames[1337][0] != "hax" {
 		t.Fatal("expected", "hax", "got", apmClient.metricDataNames[1337][0])
+	}
+}
+
+func TestCollectMetricsAppIDMetricNameNotFoundFailure(t *testing.T) {
+	apmClient := &apmClientTestImpl{}
+
+	a := &newrelic.APM{
+		APMClient: apmClient,
+	}
+
+	metrics := []plugin.Metric{
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "show", "health", "status"),
+			Tags: map[string]string{
+				"Type": "application",
+				"Path": "HealthStatus",
+				"Unit": "string",
+			},
+		},
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1234", "show", "health", "status"),
+			Tags: map[string]string{
+				"Type": "application",
+				"Path": "HealthStatus",
+				"Unit": "string",
+			},
+		},
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "show", "reporting"),
+			Tags: map[string]string{
+				"Type": "application",
+				"Path": "Reporting",
+				"Unit": "bool",
+			},
+		},
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "metric", "hax", "average_response_time"),
+			Tags: map[string]string{
+				"Type": "metric",
+				"Unit": "float",
+			},
+		},
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "metric", "h4x", "average_response_time"),
+			Tags: map[string]string{
+				"Type": "metric",
+				"Unit": "float",
+			},
+		},
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "browser", "314", "show", "health", "status"),
+			Tags: map[string]string{
+				"Type": "application",
+				"Path": "HealthStatus",
+				"Unit": "string",
+			},
+		},
+	}
+
+	_, err := a.CollectMetrics(metrics)
+	if err == nil {
+		t.Fatal("expected", "error", "got", nil)
+	}
+
+	expectedErrStr := "Metric name mismatch! Requested metric name: h4x. Metric name in the received payload: hax."
+	if err.Error() != expectedErrStr {
+		t.Fatal("expected", expectedErrStr, "got", err.Error())
+	}
+}
+
+func TestCollectMetricsAppIDMetricValueNameNotFoundFailure(t *testing.T) {
+	apmClient := &apmClientTestImpl{}
+
+	a := &newrelic.APM{
+		APMClient: apmClient,
+	}
+
+	metrics := []plugin.Metric{
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "show", "health", "status"),
+			Tags: map[string]string{
+				"Type": "application",
+				"Path": "HealthStatus",
+				"Unit": "string",
+			},
+		},
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1234", "show", "health", "status"),
+			Tags: map[string]string{
+				"Type": "application",
+				"Path": "HealthStatus",
+				"Unit": "string",
+			},
+		},
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "show", "reporting"),
+			Tags: map[string]string{
+				"Type": "application",
+				"Path": "Reporting",
+				"Unit": "bool",
+			},
+		},
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "metric", "hax", "average_response_time"),
+			Tags: map[string]string{
+				"Type": "metric",
+				"Unit": "float",
+			},
+		},
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "metric", "hax", "h444x"),
+			Tags: map[string]string{
+				"Type": "metric",
+				"Unit": "float",
+			},
+		},
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "browser", "314", "show", "health", "status"),
+			Tags: map[string]string{
+				"Type": "application",
+				"Path": "HealthStatus",
+				"Unit": "string",
+			},
+		},
+	}
+
+	_, err := a.CollectMetrics(metrics)
+	if err == nil {
+		t.Fatal("expected", "error", "got", nil)
+	}
+
+	expectedErrStr := "Path element not found: h444x"
+	if err.Error() != expectedErrStr {
+		t.Fatal("expected", expectedErrStr, "got", err.Error())
 	}
 }
