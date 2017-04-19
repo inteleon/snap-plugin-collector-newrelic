@@ -51,9 +51,9 @@ workflow:
       /inteleon/newrelic/apm/APP_ID/show/summary/application/response_time: {}
       /inteleon/newrelic/apm/APP_ID/show/summary/application/throughput: {}
       /inteleon/newrelic/apm/APP_ID/show/summary/application/error_rate: {}
-      "|inteleon|newrelic|apm|APP_ID|metric|External/api.github.com/all|average_response_time": {}
-      "|inteleon|newrelic|apm|APP_ID|metric|External/api.github.com/all|calls_per_minute": {}
-      "|inteleon|newrelic|apm|APP_ID|metric|External/api.github.com/all|standard_deviation": {}
+      "|inteleon|newrelic|apm|APP_ID|metric|External/api.github.com/all|average_response_time|value": {}
+      "|inteleon|newrelic|apm|APP_ID|metric|External/api.github.com/all|calls_per_minute|value": {}
+      "|inteleon|newrelic|apm|APP_ID|metric|External/api.github.com/all|standard_deviation|value": {}
     config:
       /inteleon/newrelic:
         api_key: "SUPER SECRET NEW RELIC API KEY"

@@ -20,7 +20,7 @@ workflow:
       /inteleon/newrelic/apm/APP_ID/show/summary/user/throughput: {}
       /inteleon/newrelic/apm/APP_ID/show/summary/user/apdex_target: {}
       /inteleon/newrelic/apm/APP_ID/show/summary/user/apdex_score: {}
-      "|inteleon|newrelic|apm|APP_ID|metric|External/all|average_response_time": {}
+      "|inteleon|newrelic|apm|APP_ID|metric|External/all|average_response_time|value": {}
     config:
       /inteleon/newrelic:
         api_key: "SUPER SECRET API KEY"
