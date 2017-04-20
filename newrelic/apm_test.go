@@ -44,6 +44,7 @@ func (a *apmClientTestImpl) GetApplicationMetricData(appID int, names []string, 
 					{
 						Values: map[string]float64{
 							"average_response_time": 100.34,
+							"throughput":            23,
 						},
 					},
 				},
@@ -85,7 +86,7 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 
 	metrics := []plugin.Metric{
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "show", "health", "status"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "show", "health", "status"),
 			Tags: map[string]string{
 				"Type": "application",
 				"Path": "HealthStatus",
@@ -93,7 +94,7 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 			},
 		},
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1234", "show", "health", "status"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1234", "application", "show", "health", "status"),
 			Tags: map[string]string{
 				"Type": "application",
 				"Path": "HealthStatus",
@@ -101,7 +102,7 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 			},
 		},
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "show", "reporting"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "show", "reporting"),
 			Tags: map[string]string{
 				"Type": "application",
 				"Path": "Reporting",
@@ -109,7 +110,14 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 			},
 		},
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "metric", "hax", "average_response_time", "value"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "metric", "*", "hax", "average_response_time", "value"),
+			Tags: map[string]string{
+				"Type": "metric",
+				"Unit": "float",
+			},
+		},
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "metric", "1", "hax", "throughput", "value"),
 			Tags: map[string]string{
 				"Type": "metric",
 				"Unit": "float",
@@ -130,8 +138,8 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(ret) != 4 {
-		t.Fatal("expected", 4, "got", len(ret))
+	if len(ret) != 5 {
+		t.Fatal("expected", 5, "got", len(ret))
 	}
 
 	for _, m := range ret[:2] {
@@ -146,6 +154,10 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 
 	if ret[3].Data.(float64) != 100.34 {
 		t.Fatal("expected", 100.34, "got", ret[3].Data.(float64))
+	}
+
+	if ret[4].Data.(float64) != 23 {
+		t.Fatal("expected", 23, "got", ret[4].Data.(float64))
 	}
 
 	if len(apmClient.appIDs) != 2 {
@@ -189,7 +201,7 @@ func TestCollectMetricsAppIDMetricNameNotFoundFailure(t *testing.T) {
 
 	metrics := []plugin.Metric{
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "show", "health", "status"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "show", "health", "status"),
 			Tags: map[string]string{
 				"Type": "application",
 				"Path": "HealthStatus",
@@ -197,7 +209,7 @@ func TestCollectMetricsAppIDMetricNameNotFoundFailure(t *testing.T) {
 			},
 		},
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1234", "show", "health", "status"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1234", "application", "show", "health", "status"),
 			Tags: map[string]string{
 				"Type": "application",
 				"Path": "HealthStatus",
@@ -205,7 +217,7 @@ func TestCollectMetricsAppIDMetricNameNotFoundFailure(t *testing.T) {
 			},
 		},
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "show", "reporting"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "show", "reporting"),
 			Tags: map[string]string{
 				"Type": "application",
 				"Path": "Reporting",
@@ -213,14 +225,14 @@ func TestCollectMetricsAppIDMetricNameNotFoundFailure(t *testing.T) {
 			},
 		},
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "metric", "hax", "average_response_time", "value"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "metric", "*", "hax", "average_response_time", "value"),
 			Tags: map[string]string{
 				"Type": "metric",
 				"Unit": "float",
 			},
 		},
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "metric", "h4x", "average_response_time", "value"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "metric", "*", "h4x", "average_response_time", "value"),
 			Tags: map[string]string{
 				"Type": "metric",
 				"Unit": "float",
@@ -256,7 +268,7 @@ func TestCollectMetricsAppIDMetricValueNameNotFoundFailure(t *testing.T) {
 
 	metrics := []plugin.Metric{
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "show", "health", "status"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "show", "health", "status"),
 			Tags: map[string]string{
 				"Type": "application",
 				"Path": "HealthStatus",
@@ -264,7 +276,7 @@ func TestCollectMetricsAppIDMetricValueNameNotFoundFailure(t *testing.T) {
 			},
 		},
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1234", "show", "health", "status"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1234", "application", "show", "health", "status"),
 			Tags: map[string]string{
 				"Type": "application",
 				"Path": "HealthStatus",
@@ -272,7 +284,7 @@ func TestCollectMetricsAppIDMetricValueNameNotFoundFailure(t *testing.T) {
 			},
 		},
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "show", "reporting"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "show", "reporting"),
 			Tags: map[string]string{
 				"Type": "application",
 				"Path": "Reporting",
@@ -280,14 +292,14 @@ func TestCollectMetricsAppIDMetricValueNameNotFoundFailure(t *testing.T) {
 			},
 		},
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "metric", "hax", "average_response_time", "value"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "metric", "*", "hax", "average_response_time", "value"),
 			Tags: map[string]string{
 				"Type": "metric",
 				"Unit": "float",
 			},
 		},
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "metric", "hax", "h444x", "value"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "metric", "*", "hax", "h444x", "value"),
 			Tags: map[string]string{
 				"Type": "metric",
 				"Unit": "float",

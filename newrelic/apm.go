@@ -13,86 +13,92 @@ import (
 // APMMetrics is a list containing the available APM metrics and their properties.
 var APMMetrics = []Metric{
 	{
-		Namespace: plugin.NewNamespace("show", "health", "status"),
+		Namespace: plugin.NewNamespace("application", "show", "health", "status"),
 		Type:      "application",
 		Path:      "HealthStatus",
 		Unit:      "string",
 	},
 	{
-		Namespace: plugin.NewNamespace("show", "reporting"),
+		Namespace: plugin.NewNamespace("application", "show", "reporting"),
 		Type:      "application",
 		Path:      "Reporting",
 		Unit:      "bool",
 	},
 	{
-		Namespace: plugin.NewNamespace("show", "summary", "application", "response_time"),
+		Namespace: plugin.NewNamespace("application", "show", "summary", "application", "response_time"),
 		Type:      "application",
 		Path:      "ApplicationSummary/ResponseTime",
 		Unit:      "float",
 	},
 	{
-		Namespace: plugin.NewNamespace("show", "summary", "application", "throughput"),
+		Namespace: plugin.NewNamespace("application", "show", "summary", "application", "throughput"),
 		Type:      "application",
 		Path:      "ApplicationSummary/Throughput",
 		Unit:      "float",
 	},
 	{
-		Namespace: plugin.NewNamespace("show", "summary", "application", "error_rate"),
+		Namespace: plugin.NewNamespace("application", "show", "summary", "application", "error_rate"),
 		Type:      "application",
 		Path:      "ApplicationSummary/ErrorRate",
 		Unit:      "float",
 	},
 	{
-		Namespace: plugin.NewNamespace("show", "summary", "application", "apdex_target"),
+		Namespace: plugin.NewNamespace("application", "show", "summary", "application", "apdex_target"),
 		Type:      "application",
 		Path:      "ApplicationSummary/ApdexTarget",
 		Unit:      "float",
 	},
 	{
-		Namespace: plugin.NewNamespace("show", "summary", "application", "apdex_score"),
+		Namespace: plugin.NewNamespace("application", "show", "summary", "application", "apdex_score"),
 		Type:      "application",
 		Path:      "ApplicationSummary/ApdexScore",
 		Unit:      "float",
 	},
 	{
-		Namespace: plugin.NewNamespace("show", "summary", "application", "host_count"),
+		Namespace: plugin.NewNamespace("application", "show", "summary", "application", "host_count"),
 		Type:      "application",
 		Path:      "ApplicationSummary/HostCount",
 		Unit:      "int",
 	},
 	{
-		Namespace: plugin.NewNamespace("show", "summary", "application", "instance_count"),
+		Namespace: plugin.NewNamespace("application", "show", "summary", "application", "instance_count"),
 		Type:      "application",
 		Path:      "ApplicationSummary/InstanceCount",
 		Unit:      "int",
 	},
 	{
-		Namespace: plugin.NewNamespace("show", "summary", "user", "response_time"),
+		Namespace: plugin.NewNamespace("application", "show", "summary", "user", "response_time"),
 		Type:      "application",
 		Path:      "EndUserSummary/ResponseTime",
 		Unit:      "float",
 	},
 	{
-		Namespace: plugin.NewNamespace("show", "summary", "user", "throughput"),
+		Namespace: plugin.NewNamespace("application", "show", "summary", "user", "throughput"),
 		Type:      "application",
 		Path:      "EndUserSummary/Throughput",
 		Unit:      "float",
 	},
 	{
-		Namespace: plugin.NewNamespace("show", "summary", "user", "apdex_target"),
+		Namespace: plugin.NewNamespace("application", "show", "summary", "user", "apdex_target"),
 		Type:      "application",
 		Path:      "EndUserSummary/ApdexTarget",
 		Unit:      "float",
 	},
 	{
-		Namespace: plugin.NewNamespace("show", "summary", "user", "apdex_score"),
+		Namespace: plugin.NewNamespace("application", "show", "summary", "user", "apdex_score"),
 		Type:      "application",
 		Path:      "EndUserSummary/ApdexScore",
 		Unit:      "float",
 	},
 	{
 		Namespace: plugin.Namespace{
+			plugin.NewNamespaceElement("application"),
 			plugin.NewNamespaceElement("metric"),
+			plugin.NamespaceElement{
+				Name:        "minutes",
+				Description: "Number of minutes to construct a relative timeframe from (now - minutes).",
+				Value:       "*",
+			},
 			plugin.NamespaceElement{
 				Name:        "metric_name",
 				Description: "Metric name",
@@ -300,10 +306,29 @@ func (a *APM) collectApplicationAdditionalMetrics(metrics []plugin.Metric) ([]pl
 			return appAdditionalMetrics, err
 		}
 
-		metricStringID := m.Namespace.Element(5).Value
+		relativeMin := m.Namespace.Element(6).Value
+		metricStringID := m.Namespace.Element(7).Value
+		metricDataOptions := &nr.MetricDataOptions{
+			Summarize: true,
+		}
+
+		if relativeMin != "*" {
+			relativeMinInt, err := strconv.Atoi(relativeMin)
+			if err != nil {
+				return appAdditionalMetrics, err
+			}
+
+			metricDataOptions.From = time.Now().UTC().Add(-(time.Duration(relativeMinInt) * time.Minute))
+			metricDataOptions.To = time.Now().UTC()
+		}
+
 		if _, ok := addMetrics[appIDInt][metricStringID]; !ok {
 			// Additional application metric missing, fetching...
-			fetchAppAdditionalMetricData, err := a.APMClient.GetApplicationMetricData(appIDInt, []string{metricStringID}, nil)
+			fetchAppAdditionalMetricData, err := a.APMClient.GetApplicationMetricData(
+				appIDInt,
+				[]string{metricStringID},
+				metricDataOptions,
+			)
 			if err != nil {
 				return appAdditionalMetrics, err
 			}

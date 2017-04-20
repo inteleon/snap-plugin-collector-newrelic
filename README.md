@@ -48,12 +48,12 @@ deadline: "15s"
 workflow:
   collect:
     metrics:
-      /inteleon/newrelic/apm/APP_ID/show/summary/application/response_time: {}
-      /inteleon/newrelic/apm/APP_ID/show/summary/application/throughput: {}
-      /inteleon/newrelic/apm/APP_ID/show/summary/application/error_rate: {}
-      "|inteleon|newrelic|apm|APP_ID|metric|External/api.github.com/all|average_response_time|value": {}
-      "|inteleon|newrelic|apm|APP_ID|metric|External/api.github.com/all|calls_per_minute|value": {}
-      "|inteleon|newrelic|apm|APP_ID|metric|External/api.github.com/all|standard_deviation|value": {}
+      /inteleon/newrelic/apm/APP_ID/application/show/summary/application/response_time: {}
+      /inteleon/newrelic/apm/APP_ID/application/show/summary/application/throughput: {}
+      /inteleon/newrelic/apm/APP_ID/application/show/summary/application/error_rate: {}
+      "|inteleon|newrelic|apm|APP_ID|application|metric|*|External/api.github.com/all|average_response_time|value": {} # average value for the last 30 minutes (default New Relic timeframe)
+      "|inteleon|newrelic|apm|APP_ID|application|metric|1|External/api.github.com/all|calls_per_minute|value": {} # average value for the last minute
+      "|inteleon|newrelic|apm|APP_ID|application|metric|5|External/api.github.com/all|standard_deviation|value": {} # average value for the last 5 minutes
     config:
       /inteleon/newrelic:
         api_key: "SUPER SECRET NEW RELIC API KEY"
