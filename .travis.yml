@@ -1,1 +1,4 @@
 language: go
+
+before_install:
+  - tools/ci/setup.sh
