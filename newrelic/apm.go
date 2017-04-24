@@ -285,7 +285,8 @@ func (a *APM) collectApplications(metrics []plugin.Metric) ([]plugin.Metric, err
 		// Convert the app data to a struct so it's more easily traversable and more universal before passing it to the populateMetric function.
 		appMetric, err := a.populateMetric(metrics[i], structs.Map(apps[appIDInt]))
 		if err != nil {
-			return appsMetrics, err
+			// Metric not found, skip reporting it and continue execution.
+			continue
 		}
 
 		appsMetrics = append(appsMetrics, appMetric)
@@ -344,11 +345,8 @@ func (a *APM) collectApplicationAdditionalMetrics(metrics []plugin.Metric) ([]pl
 
 		numberOfMetricsFound := len(appAdditionalMetricData.Metrics)
 		if numberOfMetricsFound != 1 {
-			return appAdditionalMetrics, fmt.Errorf(
-				"Wrong number of returned metrics when fetching data for %s. Exepected number is 1, got %d.",
-				metricStringID,
-				numberOfMetricsFound,
-			)
+			// Metric not found, skip reporting it and continue execution.
+			continue
 		}
 
 		firstMetric := appAdditionalMetricData.Metrics[0]
