@@ -19,41 +19,15 @@ func (a *apmClientTestImpl) GetApplication(appID int) (*nr.Application, error) {
 	a.appIDs = append(a.appIDs, appID)
 
 	return &nr.Application{
+		ApplicationSummary: nr.ApplicationSummary{
+			ResponseTime: 13.37,
+		},
 		HealthStatus: "awesome",
 		Reporting:    true,
 	}, nil
 }
 
-func (a *apmClientTestImpl) GetApplicationMetricData(appID int, names []string, options *nr.MetricDataOptions) (*nr.MetricDataResponse, error) {
-	a.metricDataAppIDs = append(a.metricDataAppIDs, appID)
-
-	if len(a.metricDataNames) == 0 {
-		a.metricDataNames = map[int][]string{}
-	}
-
-	a.metricDataNames[appID] = []string{}
-	for i := range names {
-		a.metricDataNames[appID] = append(a.metricDataNames[appID], names[i])
-	}
-
-	return &nr.MetricDataResponse{
-		Metrics: []nr.MetricData{
-			{
-				Name: "hax",
-				Timeslices: []nr.MetricTimeslice{
-					{
-						Values: map[string]float64{
-							"average_response_time": 100.34,
-							"throughput":            23,
-						},
-					},
-				},
-			},
-		},
-	}, nil
-}
-
-func TestGetMetricTypesSuccess(t *testing.T) {
+func TestGetAppMetricTypesSuccess(t *testing.T) {
 	a := &newrelic.APM{}
 
 	metrics, err := a.GetMetricTypes(plugin.Config{})
@@ -68,8 +42,9 @@ func TestGetMetricTypesSuccess(t *testing.T) {
 	}
 
 	for i, m := range metrics {
-		expectedNS := fmt.Sprintf("inteleon/newrelic/apm/*/%s", strings.Join(newrelic.APMMetrics[i].Namespace.Strings(), "/"))
+		expectedNS := fmt.Sprintf("inteleon/newrelic/apm/%s", strings.Join(newrelic.APMMetrics[i].Namespace.Strings(), "/"))
 		ns := strings.Join(m.Namespace.Strings(), "/")
+		t.Log(ns)
 
 		if ns != expectedNS {
 			t.Fatal("expected", expectedNS, "got", ns)
@@ -77,7 +52,7 @@ func TestGetMetricTypesSuccess(t *testing.T) {
 	}
 }
 
-func TestCollectMetricsAppIDSuccess(t *testing.T) {
+func TestCollectAppMetricsAppIDSuccess(t *testing.T) {
 	apmClient := &apmClientTestImpl{}
 
 	a := &newrelic.APM{
@@ -86,7 +61,7 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 
 	metrics := []plugin.Metric{
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "show", "health", "status"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "application", "1337", "show", "health", "status"),
 			Tags: map[string]string{
 				"Type": "application",
 				"Path": "HealthStatus",
@@ -94,7 +69,7 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 			},
 		},
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1234", "application", "show", "health", "status"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "application", "1234", "show", "health", "status"),
 			Tags: map[string]string{
 				"Type": "application",
 				"Path": "HealthStatus",
@@ -102,33 +77,19 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 			},
 		},
 		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "show", "reporting"),
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "application", "1337", "show", "summary", "application", "response_time"),
+			Tags: map[string]string{
+				"Type": "application",
+				"Path": "ApplicationSummary/ResponseTime",
+				"Unit": "float",
+			},
+		},
+		{
+			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "application", "1337", "show", "reporting"),
 			Tags: map[string]string{
 				"Type": "application",
 				"Path": "Reporting",
 				"Unit": "bool",
-			},
-		},
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "metric", "*", "hax", "average_response_time", "value"),
-			Tags: map[string]string{
-				"Type": "metric",
-				"Unit": "float",
-			},
-		},
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "metric", "1", "hax", "throughput", "value"),
-			Tags: map[string]string{
-				"Type": "metric",
-				"Unit": "float",
-			},
-		},
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "browser", "314", "show", "health", "status"),
-			Tags: map[string]string{
-				"Type": "application",
-				"Path": "HealthStatus",
-				"Unit": "string",
 			},
 		},
 	}
@@ -138,8 +99,8 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(ret) != 5 {
-		t.Fatal("expected", 5, "got", len(ret))
+	if len(ret) != 4 {
+		t.Fatal("expected", 4, "got", len(ret))
 	}
 
 	for _, m := range ret[:2] {
@@ -148,16 +109,13 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 		}
 	}
 
-	if !ret[2].Data.(bool) {
+	appResponseTimeData := ret[2].Data.(float64)
+	if appResponseTimeData != 13.37 {
+		t.Fatal("expected", 13.37, "got", appResponseTimeData)
+	}
+
+	if !ret[3].Data.(bool) {
 		t.Fatal("expected", true, "got", false)
-	}
-
-	if ret[3].Data.(float64) != 100.34 {
-		t.Fatal("expected", 100.34, "got", ret[3].Data.(float64))
-	}
-
-	if ret[4].Data.(float64) != 23 {
-		t.Fatal("expected", 23, "got", ret[4].Data.(float64))
 	}
 
 	if len(apmClient.appIDs) != 2 {
@@ -169,159 +127,5 @@ func TestCollectMetricsAppIDSuccess(t *testing.T) {
 		if id != expectedIDs[i] {
 			t.Fatal("expected", expectedIDs[i], "got", id)
 		}
-	}
-
-	if len(apmClient.metricDataAppIDs) != 1 {
-		t.Fatal("expected", 1, "got", len(apmClient.metricDataAppIDs))
-	}
-
-	if apmClient.metricDataAppIDs[0] != 1337 {
-		t.Fatal("expected", 1337, "got", apmClient.metricDataAppIDs[0])
-	}
-
-	if len(apmClient.metricDataNames) != 1 {
-		t.Fatal("expected", 1, "got", len(apmClient.metricDataNames))
-	}
-
-	if len(apmClient.metricDataNames[1337]) != 1 {
-		t.Fatal("expected", 1, "got", len(apmClient.metricDataNames[1337]))
-	}
-
-	if apmClient.metricDataNames[1337][0] != "hax" {
-		t.Fatal("expected", "hax", "got", apmClient.metricDataNames[1337][0])
-	}
-}
-
-func TestCollectMetricsAppIDMetricNameNotFoundFailure(t *testing.T) {
-	apmClient := &apmClientTestImpl{}
-
-	a := &newrelic.APM{
-		APMClient: apmClient,
-	}
-
-	metrics := []plugin.Metric{
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "show", "health", "status"),
-			Tags: map[string]string{
-				"Type": "application",
-				"Path": "HealthStatus",
-				"Unit": "string",
-			},
-		},
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1234", "application", "show", "health", "status"),
-			Tags: map[string]string{
-				"Type": "application",
-				"Path": "HealthStatus",
-				"Unit": "string",
-			},
-		},
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "show", "reporting"),
-			Tags: map[string]string{
-				"Type": "application",
-				"Path": "Reporting",
-				"Unit": "bool",
-			},
-		},
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "metric", "*", "hax", "average_response_time", "value"),
-			Tags: map[string]string{
-				"Type": "metric",
-				"Unit": "float",
-			},
-		},
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "metric", "*", "h4x", "average_response_time", "value"),
-			Tags: map[string]string{
-				"Type": "metric",
-				"Unit": "float",
-			},
-		},
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "browser", "314", "show", "health", "status"),
-			Tags: map[string]string{
-				"Type": "application",
-				"Path": "HealthStatus",
-				"Unit": "string",
-			},
-		},
-	}
-
-	_, err := a.CollectMetrics(metrics)
-	if err == nil {
-		t.Fatal("expected", "error", "got", nil)
-	}
-
-	expectedErrStr := "Metric name mismatch! Requested metric name: h4x. Metric name in the received payload: hax."
-	if err.Error() != expectedErrStr {
-		t.Fatal("expected", expectedErrStr, "got", err.Error())
-	}
-}
-
-func TestCollectMetricsAppIDMetricValueNameNotFoundFailure(t *testing.T) {
-	apmClient := &apmClientTestImpl{}
-
-	a := &newrelic.APM{
-		APMClient: apmClient,
-	}
-
-	metrics := []plugin.Metric{
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "show", "health", "status"),
-			Tags: map[string]string{
-				"Type": "application",
-				"Path": "HealthStatus",
-				"Unit": "string",
-			},
-		},
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1234", "application", "show", "health", "status"),
-			Tags: map[string]string{
-				"Type": "application",
-				"Path": "HealthStatus",
-				"Unit": "string",
-			},
-		},
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "show", "reporting"),
-			Tags: map[string]string{
-				"Type": "application",
-				"Path": "Reporting",
-				"Unit": "bool",
-			},
-		},
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "metric", "*", "hax", "average_response_time", "value"),
-			Tags: map[string]string{
-				"Type": "metric",
-				"Unit": "float",
-			},
-		},
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "apm", "1337", "application", "metric", "*", "hax", "h444x", "value"),
-			Tags: map[string]string{
-				"Type": "metric",
-				"Unit": "float",
-			},
-		},
-		{
-			Namespace: plugin.NewNamespace("inteleon", "newrelic", "browser", "314", "show", "health", "status"),
-			Tags: map[string]string{
-				"Type": "application",
-				"Path": "HealthStatus",
-				"Unit": "string",
-			},
-		},
-	}
-
-	_, err := a.CollectMetrics(metrics)
-	if err == nil {
-		t.Fatal("expected", "error", "got", nil)
-	}
-
-	expectedErrStr := "Path element not found: h444x"
-	if err.Error() != expectedErrStr {
-		t.Fatal("expected", expectedErrStr, "got", err.Error())
 	}
 }

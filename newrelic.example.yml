@@ -7,20 +7,29 @@ deadline: "15s"
 workflow:
   collect:
     metrics:
-      /inteleon/newrelic/apm/APP_ID/application/show/health/status: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/reporting: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/application/response_time: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/application/throughput: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/application/error_rate: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/application/apdex_target: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/application/apdex_score: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/application/host_count: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/application/instance_count: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/user/response_time: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/user/throughput: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/user/apdex_target: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/user/apdex_score: {}
-      "|inteleon|newrelic|apm|APP_ID|application|metric|1|External/all|average_response_time|value": {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/response_time: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/throughput: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/error_rate: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/apdex_target: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/apdex_score: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/host_count: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/instance_count: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/response_time: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/throughput: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/error_rate: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/apdex_target: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/apdex_score: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/host_count: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/instance_count: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/response_time: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/throughput: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/error_rate: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/apdex_target: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/apdex_score: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/host_count: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/instance_count: {}
+      "|inteleon|newrelic|metric|application|APP_ID|1|External/secure.lekab.com/all|average_response_time|value": {}
+      "|inteleon|newrelic|metric|component|COMPONENT_ID|1|Component/Runtime/System/Threads[Threads]|average_value|value": {}
     config:
       /inteleon/newrelic:
         api_key: "SUPER SECRET API KEY"

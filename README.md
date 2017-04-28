@@ -16,7 +16,23 @@ Should work on any platform that `Snap` supports.
 
 ## Known issues
 
-The latest `grpc` dependency does not work with the latest `snaptel plugin toolkit`.
+### grpc
+
+The latest `grpc` dependency does not work with the latest `plugin toolkit` for `snaptel`.
+
+### New Relic Go library
+
+I created a pull request with improvements to the `New Relic` Go library that I'm using.
+So far these changes are still a pull request, not merged into the master branch.
+
+Therefore you must clone my `New Relic` Go library repository and check out the correct branch.
+
+```bash
+mkdir -p $GOPATH/src/github.com/yfronto
+git clone git@github.com:inteleon/newrelic.git $GOPATH/src/github.com/yfronto/newrelic
+cd $GOPATH/src/github.com/yfronto/newrelic
+git checkout feature/support-for-component-metrics
+```
 
 ## Snap version dependencies
 
@@ -24,17 +40,17 @@ Developed and tested with `Snap` version `1.2.0`.
 
 ## Installation
 
-Coming soon.
+Download and include the binaries in your `Snap` plugin directory.
 
 ## Usage
 
 ### Available metrics
 
-Currently we only support application APM metrics.
+Currently we only support application APM and component metrics
 
-You can fetch all basic metrics for your application and also more specified metrics, like external services, etc.
+You can fetch all basic metrics for your application and also more specified metrics, like external services, metrics from plugins, etc.
 
-You can fetch a list of available metrics per application at https://rpm.newrelic.com/api/explore/applications/metric_names and the value keys they return. You can use tis data to create a metric collection namespace in your configuration file.
+You can fetch a list of available metrics per application at https://rpm.newrelic.com/api/explore/applications/metric_names. Use these metric names to create a metric collection namespace in your configuration file.
 
 Example:
 
@@ -48,12 +64,13 @@ deadline: "15s"
 workflow:
   collect:
     metrics:
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/application/response_time: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/application/throughput: {}
-      /inteleon/newrelic/apm/APP_ID/application/show/summary/application/error_rate: {}
-      "|inteleon|newrelic|apm|APP_ID|application|metric|*|External/api.github.com/all|average_response_time|value": {} # average value for the last 30 minutes (default New Relic timeframe)
-      "|inteleon|newrelic|apm|APP_ID|application|metric|1|External/api.github.com/all|calls_per_minute|value": {} # average value for the last minute
-      "|inteleon|newrelic|apm|APP_ID|application|metric|5|External/api.github.com/all|standard_deviation|value": {} # average value for the last 5 minutes
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/response_time: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/throughput: {}
+      /inteleon/newrelic/apm/application/APP_ID/show/summary/application/error_rate: {}
+      "|inteleon|newrelic|metric|application|APP_ID|*|External/api.github.com/all|average_response_time|value": {} # Average value for the last 30 minutes (default New Relic timeframe).
+      "|inteleon|newrelic|metric|application|APP_ID|1|External/api.github.com/all|calls_per_minute|value": {} # Average value for the last minute.
+      "|inteleon|newrelic|metric|application|APP_ID|5|External/api.github.com/all|standard_deviation|value": {} # Average value for the last 5 minutes.
+      "|inteleon|newrelic|metric|component|APP_ID|1|Component/Runtime/System/Threads[Threads]|average_value|value": {} # Number of threads a Go service is using (fetches using the GoRelic New Relic plugin).
     config:
       /inteleon/newrelic:
         api_key: "SUPER SECRET NEW RELIC API KEY"
