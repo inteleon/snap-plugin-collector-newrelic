@@ -20,6 +20,8 @@ Should work on any platform that `Snap` supports.
 
 The latest `grpc` dependency does not work with the latest `plugin toolkit` for `snaptel`.
 
+See `tools/ci/setup.sh` for a "solution".
+
 ### New Relic Go library
 
 I created a pull request with improvements to the `New Relic` Go library that I'm using.
@@ -29,7 +31,7 @@ Therefore you must clone my `New Relic` Go library repository and check out the 
 
 ```bash
 mkdir -p $GOPATH/src/github.com/yfronto
-git clone git@github.com:inteleon/newrelic.git $GOPATH/src/github.com/yfronto/newrelic
+git clone https://github.com/inteleon/newrelic.git $GOPATH/src/github.com/yfronto/newrelic
 cd $GOPATH/src/github.com/yfronto/newrelic
 git checkout feature/support-for-component-metrics
 ```
