@@ -103,3 +103,6 @@ Coming soon.
 ## License
 
 Apache-2.0 - https://github.com/inteleon/snap-plugin-collector-newrelic/blob/master/LICENSE
+
+## Acknowledgements
+* Author: [@kristinn](https://github.com/kristinn/)
